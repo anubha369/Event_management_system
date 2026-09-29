@@ -1,25 +1,37 @@
-# Opportunity Hub: Content-Based Recommendation System
+Opportunity Hub: Content-Based Recommendation System
 
-Students ko internships, hackathons, workshops jaisi opportunities dhundhne mein time lagta hai aur kaunsi unke liye eligible hai yeh pata nahi hota. Yeh system student ki skills se match hone wali opportunities recommend karta hai.
 
-**Live demo:** <apna Streamlit link yahan daal>
+Students spend a lot of time hunting for internships, hackathons, and workshops — and often can't even tell which ones they're eligible for. This system recommends opportunities that match a student's skill profile.
+Live demo: <https://event-management-system-l5kc.onrender.com>
 
-## Kaise kaam karta hai
-1. 5000 opportunities ka dataset (domain, required/preferred skills, eligibility, mode, deadline).
-2. Skills ko comma-based tokenizer se clean kiya, TF-IDF vectors banaye (94 unique tokens).
-3. Student ki profile ko wahi TF-IDF space mein transform kiya.
-4. Cosine similarity se match score nikala.
-5. Filters: deadline, eligibility year, branch, mode. Filters mask se lagte hain taaki matrix ke row indices na bigdein.
-6. Har result ke saath matched aur missing skills dikhte hain.
 
-## Tech
-Python, pandas, scikit-learn, Streamlit
+How It Works:
 
-## Chalane ka tarika
-```
+* A dataset of 5000 opportunities (domain, required/preferred skills, eligibility, mode, deadline).
+
+* Skills were cleaned using a comma-based tokenizer, and TF-IDF vectors were built (94 unique tokens).
+
+* The student's profile is transformed into the same TF-IDF space.
+
+* Cosine similarity produces a match score.
+
+* Filters applied: deadline, eligibility year, branch, and mode. Filters use a boolean mask so the matrix row indices stay aligned.
+* Each result shows both matched and missing skills.
+
+Tech Stack:
+
+Python
+pandas
+scikit-learn
+Streamlit
+
+How to Run:
+
+bash
 pip install -r requirements.txt
 streamlit run app.py
-```
 
-## Note
-Dataset synthetic hai. Dates ko aage shift kiya gaya hai taaki demo mein deadlines valid rahein.
+
+Note:
+
+The dataset is synthetic. Dates were shifted forward so deadlines remain valid during the demo.
