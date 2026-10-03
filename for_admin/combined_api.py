@@ -7,15 +7,21 @@ from sqlalchemy.orm import Session
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
 
 from recommender import Recommender
-from database import get_db
+from database import get_db, engine, Base
 from models import User, Organizer, Event
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Opportunity Hub ML API",
     description="Student Recommendation, Organizer Analytics and Admin Risk Detection",
     version="1.0"
+
+    
 )
 
 # Student ML
@@ -24,12 +30,12 @@ student_model = Recommender(
 )
 
 # Organizer ML
-organizer_model = joblib.load("models/registration_model.pkl")
-organizer_features = joblib.load("models/registration_features.pkl")
+organizer_model = joblib.load(HERE / "models" / "registration_model.pkl")
+organizer_features = joblib.load(HERE / "models" / "registration_features.pkl")
 
 # Admin ML
-admin_model = joblib.load("models/admin_event_anomaly_model.pkl")
-admin_model_features = joblib.load("models/admin_model_features.pkl")
+admin_model = joblib.load(HERE / "models" / "admin_event_anomaly_model.pkl")
+admin_model_features = joblib.load(HERE / "models" / "admin_model_features.pkl")
 
 
 @app.get("/")
