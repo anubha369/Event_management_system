@@ -1,5 +1,4 @@
 from fastapi import FastAPI, Depends
-from fastapi.middleware.cors import CORSMiddleware
 import joblib
 import pandas as pd
 import sys
@@ -23,13 +22,6 @@ app = FastAPI(
     version="1.0"
 
     
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 # Student ML
@@ -257,9 +249,6 @@ except Exception as e:
     print("Chatbot disabled:", e)
 
 
-SYSTEM_INSTRUCTION = "You are the official AI assistant of Opportunity Hub, a platform where students discover internships, hackathons, competitions, courses and career events. Help students understand opportunities, eligibility, skills, deadlines and application requirements. Be practical, concise and student-friendly. Do not invent event names, deadlines, eligibility or links. If information is not available, say so clearly."
-
-
 class ChatRequest(BaseModel):
     message: str
     previous_interaction_id: str | None = None
@@ -269,7 +258,7 @@ class ChatRequest(BaseModel):
 def chat_with_bot(data: ChatRequest):
     if chat_client is None:
         raise HTTPException(status_code=503, detail="Chatbot is not configured")
-    kwargs = {"model": "gemini-3.8-flash", "input": data.message, "system_instruction": SYSTEM_INSTRUCTION}
+    kwargs = {"model": "gemini-3.8-flash", "input": data.message}
     if data.previous_interaction_id:
         kwargs["previous_interaction_id"] = data.previous_interaction_id
     interaction = chat_client.interactions.create(**kwargs)
