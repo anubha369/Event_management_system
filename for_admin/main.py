@@ -15,6 +15,7 @@ app = FastAPI(
     title="Opportunity Hub ML API",
     description="Student Recommendation, Organizer Prediction and Admin Risk Detection",
     version="1.0"
+    
 )
 
 
