@@ -233,3 +233,33 @@ def check_event_risk(data: dict):
         "review_priority": priority,
         "anomaly_score": round(float(anomaly_score), 4)
     }
+
+
+from pydantic import BaseModel
+from dotenv import load_dotenv
+from google import genai
+from fastapi import HTTPException
+
+load_dotenv(ROOT / ".env")
+
+try:
+    chat_client = genai.Client()
+except Exception as e:
+    chat_client = None
+    print("Chatbot disabled:", e)
+
+
+class ChatRequest(BaseModel):
+    message: str
+    previous_interaction_id: str | None = None
+
+
+@app.post("/chat")
+def chat_with_bot(data: ChatRequest):
+    if chat_client is None:
+        raise HTTPException(status_code=503, detail="Chatbot is not configured")
+    kwargs = {"model": "gemini-3.8-flash", "input": data.message}
+    if data.previous_interaction_id:
+        kwargs["previous_interaction_id"] = data.previous_interaction_id
+    interaction = chat_client.interactions.create(**kwargs)
+    return {"reply": interaction.output_text, "interaction_id": interaction.id}
