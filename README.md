@@ -35,3 +35,7 @@ streamlit run app.py
 Note:
 
 The dataset is synthetic. Dates were shifted forward so deadlines remain valid during the demo.
+
+
+deployed ml api :
+https://event-management-system-1-g0sx.onrender.com/
