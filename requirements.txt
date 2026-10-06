@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pydantic
+pandas==3.0.3
+scikit-learn==1.6.1
+joblib==1.6.0
+SQLAlchemy
+streamlit
+python-dotenv
+google-genai
+numpy==2.5.3

@@ -1,0 +1,196 @@
+from fastapi import FastAPI
+import joblib
+import pandas as pd
+import sys
+import os
+
+# Root project ko Python path mein add karna
+sys.path.append("..")
+
+from recommender import Recommender
+
+
+app = FastAPI(
+    title="Opportunity Hub ML API",
+    description="Student, Organizer and Admin ML APIs",
+    version="1.0"
+)
+
+
+# =========================================================
+# STUDENT RECOMMENDER
+# =========================================================
+
+student_model = Recommender(
+    "../Opportunity_Hub_Master_Dataset_5000.csv"
+)
+
+
+# =========================================================
+# ORGANIZER REGISTRATION PREDICTION MODEL
+# =========================================================
+
+organizer_model = joblib.load(
+    "models/registration_model.pkl"
+)
+
+organizer_features = joblib.load(
+    "models/registration_features.pkl"
+)
+
+
+# =========================================================
+# ADMIN EVENT ANOMALY MODEL
+# =========================================================
+
+admin_model = joblib.load(
+    "models/admin_event_anomaly_model.pkl"
+)
+
+admin_model_features = joblib.load(
+    "models/admin_model_features.pkl"
+)
+
+
+# =========================================================
+# HOME
+# =========================================================
+
+@app.get("/")
+def home():
+    return {
+        "message": "Opportunity Hub ML API is running",
+        "services": [
+            "Student Recommendation",
+            "Organizer Registration Prediction",
+            "Admin Event Risk Detection"
+        ]
+    }
+
+
+# =========================================================
+# STUDENT RECOMMENDATION
+# =========================================================
+
+@app.post("/student/recommend")
+def student_recommend(data: dict):
+
+    domain = data.get("domain", "")
+    skills = data.get("skills", "")
+    year = data.get("year", "")
+    branch = data.get("branch", "")
+    mode = data.get("mode", "Any")
+    top_n = data.get("top_n", 5)
+
+    result = student_model.recommend(
+        domain=domain,
+        skills=skills,
+        year=year,
+        branch=branch,
+        mode=mode,
+        top_n=top_n
+    )
+
+    return result.to_dict(orient="records")
+
+
+# =========================================================
+# ORGANIZER REGISTRATION PREDICTION
+# =========================================================
+
+@app.post("/organizer/predict-registrations")
+def predict_registrations(data: dict):
+
+    input_data = pd.DataFrame([data])
+
+    # Boolean columns
+    for column in ["certificate_available", "team_required"]:
+        if column in input_data.columns:
+            input_data[column] = (
+                input_data[column].astype(int)
+            )
+
+    # Categorical encoding
+    input_data = pd.get_dummies(
+        input_data,
+        columns=["domain", "category", "mode"],
+        dtype=int
+    )
+
+    # Same columns as training
+    input_data = input_data.reindex(
+        columns=organizer_features,
+        fill_value=0
+    )
+
+    prediction = organizer_model.predict(input_data)[0]
+
+    return {
+        "predicted_registrations": int(round(prediction))
+    }
+
+
+# =========================================================
+# ADMIN EVENT RISK DETECTION
+# =========================================================
+
+@app.post("/admin/event-risk")
+def check_event_risk(data: dict):
+
+    input_data = pd.DataFrame([data])
+
+    # Missing features ko 0 se fill
+    for feature in admin_model_features:
+        if feature not in input_data.columns:
+            input_data[feature] = 0
+
+    # Correct feature order
+    input_data = input_data[admin_model_features]
+
+    # Boolean → integer
+    for column in input_data.columns:
+        if input_data[column].dtype == bool:
+            input_data[column] = input_data[column].astype(int)
+
+    # Prediction
+    prediction = admin_model.predict(input_data)[0]
+
+    # Anomaly score
+    anomaly_score = admin_model.decision_function(
+        input_data
+    )[0]
+
+    # Risk score
+    risk_score = max(
+        0,
+        min(
+            100,
+            (0.5 - anomaly_score) * 100
+        )
+    )
+
+    risk_score = round(float(risk_score), 2)
+
+    # Status
+    if prediction == -1:
+        status = "NEEDS REVIEW"
+    else:
+        status = "NORMAL"
+
+    # Priority
+    if risk_score >= 75:
+        priority = "HIGH"
+    elif risk_score >= 50:
+        priority = "MEDIUM"
+    else:
+        priority = "LOW"
+
+    return {
+        "admin_status": status,
+        "risk_score": risk_score,
+        "review_priority": priority,
+        "anomaly_score": round(
+            float(anomaly_score), 4
+        )
+    }
+
