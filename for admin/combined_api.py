@@ -142,55 +142,50 @@ def predict_registrations(data: dict):
 
 @app.get("/organizer/event-demand")
 def event_demand(db: Session = Depends(get_db)):
+    print("\n--- [DEBUG /organizer/event-demand] ---")
+
+    try:
+        bind_url = db.get_bind().url
+        print(f"DEBUG Step 1: Connected DB URL -> {bind_url}")
+    except Exception as e:
+        print(f"DEBUG Step 1 Error -> {e}")
 
     total_events = db.query(Event).count()
+    print(f"DEBUG Step 2: Total events count in DB = {total_events}")
 
-    pending_events = (
-        db.query(Event)
-        .filter(Event.status == "PENDING")
-        .count()
-    )
+    pending_events = db.query(Event).filter(Event.status == "PENDING").count()
+    approved_events = db.query(Event).filter(Event.status == "APPROVED").count()
+    rejected_events = db.query(Event).filter(Event.status == "REJECTED").count()
 
-    approved_events = (
-        db.query(Event)
-        .filter(Event.status == "APPROVED")
-        .count()
-    )
+    if total_events > 0 and (pending_events + approved_events + rejected_events) == 0:
+        pending_events = db.query(Event).filter(Event.status.ilike("pending")).count()
+        approved_events = db.query(Event).filter(Event.status.ilike("approved")).count()
+        rejected_events = db.query(Event).filter(Event.status.ilike("rejected")).count()
+        print(f"DEBUG Step 3 (Case-insensitive fallback): Pending:{pending_events}, Approved:{approved_events}, Rejected:{rejected_events}")
+    else:
+        print(f"DEBUG Step 3: Pending:{pending_events}, Approved:{approved_events}, Rejected:{rejected_events}")
 
-    rejected_events = (
-        db.query(Event)
-        .filter(Event.status == "REJECTED")
-        .count()
-    )
+    online_events = db.query(Event).filter(Event.mode == "Online").count()
+    offline_events = db.query(Event).filter(Event.mode == "Offline").count()
+    hybrid_events = db.query(Event).filter(Event.mode == "Hybrid").count()
 
-    online_events = (
-        db.query(Event)
-        .filter(Event.mode == "Online")
-        .count()
-    )
+    if total_events > 0 and (online_events + offline_events + hybrid_events) == 0:
+        online_events = db.query(Event).filter(Event.mode.ilike("online")).count()
+        offline_events = db.query(Event).filter(Event.mode.ilike("offline")).count()
+        hybrid_events = db.query(Event).filter(Event.mode.ilike("hybrid")).count()
+        print(f"DEBUG Step 4 (Case-insensitive fallback): Online:{online_events}, Offline:{offline_events}, Hybrid:{hybrid_events}")
+    else:
+        print(f"DEBUG Step 4: Online:{online_events}, Offline:{offline_events}, Hybrid:{hybrid_events}")
 
-    offline_events = (
-        db.query(Event)
-        .filter(Event.mode == "Offline")
-        .count()
-    )
-
-    hybrid_events = (
-        db.query(Event)
-        .filter(Event.mode == "Hybrid")
-        .count()
-    )
+    print("--- [END DEBUG] ---\n")
 
     return {
-
         "total_events": total_events,
-
         "event_status": {
             "pending": pending_events,
             "approved": approved_events,
             "rejected": rejected_events
         },
-
         "mode_distribution": {
             "online": online_events,
             "offline": offline_events,

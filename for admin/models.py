@@ -5,10 +5,6 @@ from datetime import datetime
 from database import Base
 
 
-# =========================
-# USER TABLE
-# =========================
-
 class User(Base):
     __tablename__ = "users"
 
@@ -26,7 +22,7 @@ class User(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # Relationship
+
     organizer = relationship(
         "Organizer",
         back_populates="user",
@@ -34,9 +30,7 @@ class User(Base):
     )
 
 
-# =========================
-# ORGANIZER TABLE
-# =========================
+
 
 class Organizer(Base):
     __tablename__ = "organizers"
@@ -63,7 +57,7 @@ class Organizer(Base):
         default=datetime.utcnow
     )
 
-    # Relationships
+
     user = relationship(
         "User",
         back_populates="organizer"
@@ -75,9 +69,7 @@ class Organizer(Base):
     )
 
 
-# =========================
-# EVENT TABLE
-# =========================
+
 
 class Event(Base):
     __tablename__ = "events"
@@ -134,7 +126,7 @@ class Event(Base):
         onupdate=datetime.utcnow
     )
 
-    # Relationship
+    
     organizer = relationship(
         "Organizer",
         back_populates="events"
